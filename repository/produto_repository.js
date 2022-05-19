@@ -1,68 +1,61 @@
-const { Client } = require('pg')
+const { Client } = require('pg');
+
 const conexao = {
-    user: 'postgres',
     host: 'localhost',
-    database: 'cantina',
-    password: 'dorgas784',
     port: 5432,
+    user: 'postgres',
+    password: 'dorgas784',
+    database: 'cantina'
 };
 
-// Ler
-exports.listar = () => {
-    const client = new Client(conexao)
-    client.connect();
-    const resultado = client.query('SELECT * from produtos');
-    console.log("Resultado: " + JSON.stringify(resultado))
-    client.end();
-    return (resultado.rows);
+
+exports.listar = async() => {
+    const cliente = new Client(conexao);
+    cliente.connect();
+    try {
+        const resultado = await cliente.query("SELECT * from produtos");
+        cliente.end();
+        return (resultado.rows);
+    } catch (err) { throw err; }
+}
+
+exports.buscarPorId = async(id) => {
+    const sql = "SELECT * FROM produtos WHERE id=$1";
+    const values = [id];
+
+    const cliente = new Client(conexao);
+    cliente.connect();
 
     try {
-        const res = await client.query(sql)
-        console.log(res.rows[0])
-        console.log(res.rows[1])
-            // { name: 'brianc', email: 'brian.m.carlson@gmail.com' }
+        const resultado = await cliente.query(sql, values);
+        cliente.end();
+        return (resultado.rows[0]);
     } catch (err) {
-        console.log(err.stack)
+        let error = {};
+        error.name = err.name;
+        error.message = err.message;
+        error.status = 500;
+        throw error;
     }
-    client.end()
 }
 
-// Ler por ID
-exports.buscarPorId = (id) => {
-    const client = new Client(conexao)
-    await client.connect()
-    const res = await client.query('SELECT * FROM produtos WHERE id=$1')
-    console.log(res.rows[0].message) // Hello world!
-    console.log(res.rows[1].message)
-    await client.end()
-}
+exports.inserir = async(produto) => {
+    const sql = "INSERT INTO produtos(nome, preco) VALUES ($1, $2) RETURNING *";
+    const values = [produto.nome, produto.preco];
 
-// Inserir
-exports.inserir = (produto) => {
-    const client = new Client(conexao)
-    await client.connect()
-    const res = await client.query('INSERT INTO produtos(nome, preco) VALUES ($1, $2) RETURNING *')
-    console.log(res.rows[0].message) // Hello world!
-    console.log(res.rows[1].message)
-    await client.end()
-}
+    const cliente = new Client(conexao);
+    cliente.connect();
 
-// Deletar
-exports.deletar = (id) => {
-    const client = new Client(conexao)
-    await client.connect()
-    const res = await client.query('DELETE FROM produtos WHERE id=$1 RETURNING *')
-    console.log(res.rows[0].message) // Hello world!
-    console.log(res.rows[1].message)
-    await client.end()
-}
+    try {
+        const resultado = await cliente.query(sql, values);
+        cliente.end();
+        return (resultado.rows[0]);
+    } catch (err) {
+        let error = {};
+        error.name = err.name;
+        error.message = err.message;
+        error.status = 500;
+        throw error;
+    }
 
-// Update
-exports.atualizar = (id, produto) => {
-    const client = new Client(conexao)
-    await client.connect()
-    const res = await client.query('UPDATE produtos SET nome=$1, preco=$2 WHERE id=$3 RETURNING *')
-    console.log(res.rows[0].message) // Hello world!
-    console.log(res.rows[1].message)
-    await client.end()
 }
